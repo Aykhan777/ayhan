@@ -32,4 +32,4 @@
       name: ayhan{{ BUILD_ID }}
       image: meowsobaka/ayhan:v{{ BUILD_ID }}
       ports:
-        - "5001:8080"
+        - "50{{BUILD_ID}}:8080"
