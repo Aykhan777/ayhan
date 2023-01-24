@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+    environment {
+        ANSIBLE_PRIVATE_KEY=credentials('ssh-key')
+        }
+   triggers {
+     pollSCM '* * * * *'
+    }
+    stages {
+        stage('build') {
+            steps{
+                sh "cd ayhan && docker build -t meowsobaka/$JOB_NAME:v$BUILD_ID ."
+            }
+        }
+        stage('push doker hub'){
+            steps {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh "docker login -u $username -p $password"
+                    sh "docker push meowsobaka/$JOB_NAME:v$BUILD_ID"
+                    }
+                }
+
+
+        }
+        stage("Deployyim my script") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
+                echo "--- Deploy ---"
+                sh "ansible-playbook playbook.yaml -i inventory --private-key=$ANSIBLE_PRIVATE_KEY -u ansible --become -e username=$username -e password=$password -e BUILD_ID=$BUILD_ID "
+                }
+            }
+        }
+    }
+
+
+    }
